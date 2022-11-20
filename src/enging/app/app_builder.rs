@@ -1,30 +1,4 @@
-pub struct Runner {
-}
-
-impl Runner {
-    pub fn run(app: &mut App) -> Result<(), super::errors::GameError> {
-        let mut is_running = true;
-
-        while is_running {
-            let start = std::time::Instant::now();
-            is_running = app.update()?;
-            let component = &mut app.get_component();
-            component.draw()?;
-            component.dt = start.elapsed();
-        }
-        return Ok(());
-    }
-}
-
-pub struct AppComponent {
-    sdl_context: sdl2::Sdl,
-    video_subsystem: sdl2::VideoSubsystem,
-    canvas: sdl2::render::Canvas<sdl2::video::Window>,
-
-    pub event_pump: sdl2::EventPump,
-    pub dt: std::time::Duration,
-
-}
+use crate::enging::errors::*;
 
 pub struct AppBuilder {
     title: String,
@@ -41,7 +15,7 @@ pub struct AppBuilder {
 }
 
 impl AppBuilder {
-    fn empty() -> AppBuilder {
+    pub fn empty() -> AppBuilder {
         AppBuilder {
             title: String::from(""),
             width: 0,
@@ -95,8 +69,7 @@ impl AppBuilder {
         return self;
     }
 
-    pub fn build(&mut self) -> Result<AppComponent, super::errors::GameError> {
-        use super::errors::sdl_error_to_game_error;
+    pub fn build(&mut self) -> Result<super::AppComponent, GameError> {
         let sdl_context = sdl2::init().map_err(sdl_error_to_game_error)?;
         let video_subsystem = sdl_context.video().map_err(sdl_error_to_game_error)?;
         if self.width == 0 || self.height == 0 {
@@ -122,7 +95,7 @@ impl AppBuilder {
 
         let window = match window.build() {
             Ok(window) => window,
-            Err(error) => return Err(super::errors::GameError::SdlError(error.to_string()))
+            Err(error) => return Err(GameError::SdlError(error.to_string()))
         };
         let mut canvas = window.into_canvas();
         if self.is_accelerated {
@@ -134,11 +107,11 @@ impl AppBuilder {
             
         let canvas = match canvas.build() {
             Ok(canvas) => canvas,
-            Err(error) => return Err(super::errors::GameError::SdlError(error.to_string())),
+            Err(error) => return Err(GameError::SdlError(error.to_string())),
         };
 
         let event_pump = sdl_context.event_pump().map_err(sdl_error_to_game_error)?;
-        let component = AppComponent {
+        let component = super::AppComponent {
             sdl_context,
             video_subsystem,
             canvas,
@@ -147,39 +120,4 @@ impl AppBuilder {
         };
         return Ok(component);
     }
-}
-
-impl AppComponent {
-    pub fn new() -> Result<AppBuilder, super::errors::GameError> {
-        return Ok(AppBuilder::empty());
-    }
-
-    fn draw(&self) -> Result<(), super::errors::GameError> {
-        return Ok(());
-    }
-}
-
-pub struct App {
-    pub component: AppComponent,
-    state: Box<dyn State>,
-}
-
-impl App {
-    pub fn new(state: Box<dyn State>, component: AppComponent) -> App {
-        return App {
-            component,
-            state
-        };
-    }
-    fn update(&mut self) -> Result<bool, super::errors::GameError> {
-        return self.state.update(&mut self.component);
-    }
-
-    fn get_component(&mut self) -> &mut AppComponent {
-        return &mut self.component;
-    }
-}
-
-pub trait State {
-    fn update(&self, component: &mut AppComponent) -> Result<bool, super::errors::GameError>;
 }
