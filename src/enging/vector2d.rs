@@ -46,6 +46,24 @@ impl Vec2d {
     }
 }
 
+impl From<sdl2::rect::Point> for Vec2d {
+    fn from(p: sdl2::rect::Point) -> Self {
+        Self {
+            x: p.x as f32,
+            y: p.y as f32,
+        }
+    }
+}
+
+impl Into<sdl2::rect::Point> for Vec2d {
+    fn into(self) -> sdl2::rect::Point {
+        sdl2::rect::Point::new(
+            self.x as i32,
+            self.y as i32,
+        )
+    }
+}
+
 impl ops::Add<Vec2d> for Vec2d {
     type Output = Vec2d;
 
