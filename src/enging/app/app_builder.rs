@@ -116,7 +116,8 @@ impl AppBuilder {
             video_subsystem,
             canvas,
             event_pump,
-            dt: std::time::Duration::new(0 ,0)
+            dt: std::time::Duration::new(0 ,0),
+            is_running: true
         };
         return Ok(component);
     }

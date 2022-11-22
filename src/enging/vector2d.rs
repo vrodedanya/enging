@@ -44,6 +44,21 @@ impl Vec2d {
         self.y = self.x * sin + self.y * cos;
         self.x = temp_x;
     }
+
+    pub fn rotate_with_moved_center(&mut self, angle: f32, center: (f32, f32)) {
+        let cos =  angle.cos();
+        let sin = angle.sin();
+
+        let c = *self - Vec2d::new(center.0, center.1);
+
+        let temp_x = center.0 + c.x * cos - c.y * sin;
+        self.y = center.1 + c.x * sin + c.y * cos;
+        self.x = temp_x;
+    }
+    
+    pub fn distance_to(&self, vec: &Vec2d) -> f32 {
+        ((self.x - vec.x).powi(2) + (self.y - vec.y).powi(2)).sqrt()
+    }
 }
 
 impl From<sdl2::rect::Point> for Vec2d {

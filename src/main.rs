@@ -1,64 +1,62 @@
 mod enging;
-use enging::{errors::*, app::*, vector2d::Vec2d};
-use sdl2::{event::*, pixels::Color};
 
-struct Application {
-    pos: Vec2d
+use enging::{errors::*, app::*, vector2d::Vec2d};
+use rand::Rng;
+use sdl2::{event::*, pixels::Color, rect::Rect, sys::Window};
+use bevy_ecs::prelude::*;
+
+struct Application{
+    world: World,
+    schedule: Schedule
 }
 
-impl enging::app::State for Application {
-    fn update(&mut self, component: &mut AppComponent) -> Result<bool, enging::errors::GameError> {
-        for event in component.event_pump.poll_iter() {
-            match event {
-                Event::Quit{..} => { return Ok(false) },
-                Event::MouseMotion { 
-                    x, 
-                    y,
-                    .. 
-                } => {
-                    self.pos.x = x as f32;
-                    self.pos.y = y as f32;
-                },
-                _ => {}
-            }
+impl enging::app::State for Application{
+    fn update(&mut self) -> Result<bool, enging::errors::GameError> {
+        let start = std::time::Instant::now();
+        self.schedule.run(&mut self.world);
+        let mut component = self.world.get_non_send_resource_mut::<AppComponent>().unwrap();
+        component.dt = start.elapsed();
+        return Ok(component.is_running);
+    }
+
+    fn init(&mut self) -> Result<(), GameError> {
+        self.world.insert_non_send_resource(AppComponent::new()?
+        .accelerated(true) 
+        .target_texture(true)
+        .centered(true)
+        .set_title(String::from("Title"))
+        .fullscreen(true)
+        .build()?);
+        use enging::ecs::rendering::*;
+        let mut rnd = rand::thread_rng();
+        for _ in 0..4000 {
+            self.world.spawn((
+                Position{position: Vec2d { x: rnd.gen_range(-100.0..2148.0), y:  rnd.gen_range(-100.0..2148.0)}, angle: rnd.gen_range(0.1..1.8)},
+                Renderable::Point(DrawablePoint{color: Color::RGB(100 + rnd.gen_range(50..150), rnd.gen_range(0..30), rnd.gen_range(0..30))})
+            ));
         }
-        return Ok(true);
-    }
 
-    fn init(&mut self, _: &mut AppComponent) -> Result<(), GameError> {
-        return Ok(());
-    }
+        #[derive(StageLabel)]
+        pub struct Rendering;
+        #[derive(StageLabel)]
+        pub struct EventHandling;
+        #[derive(StageLabel)]
+        pub struct Moving;
 
-    fn draw(&mut self, component: &mut enging::app::AppComponent) -> Result<(), GameError> {
-        component.canvas.set_draw_color(Color::RGB(0, 0, 0));
-        component.canvas.clear();
+        self.schedule.add_stage(EventHandling, SystemStage::single_threaded().with_system(enging::ecs::event_handling::handle_events));
+        self.schedule.add_stage(Moving, SystemStage::parallel().with_system(enging::ecs::movable::move_particles));
+        self.schedule.add_stage(Rendering, SystemStage::single_threaded().with_system(enging::ecs::rendering::render));
 
-        component.canvas.set_draw_color(Color::GREEN);
-        component.canvas.draw_line((0, 0), (self.pos.x as i32, self.pos.y as i32)).map_err(sdl_error_to_game_error)?;
-        component.canvas.draw_line((
-            component.canvas.window().size().0 as i32, 0), 
-            (self.pos.x as i32, self.pos.y as i32)).map_err(sdl_error_to_game_error)?;
-        component.canvas.draw_line((
-            component.canvas.window().size().0 as i32, component.canvas.window().size().1 as i32), 
-            (self.pos.x as i32, self.pos.y as i32)).map_err(sdl_error_to_game_error)?;
-        component.canvas.draw_line((
-            0, component.canvas.window().size().1 as i32), 
-            (self.pos.x as i32, self.pos.y as i32)).map_err(sdl_error_to_game_error)?;
-
-        component.canvas.present();
         return Ok(());
     }
 }
 
 fn main() -> Result<(), GameError> {
-    let component = AppComponent::new()?
-        .accelerated(true) 
-        .target_texture(true)
-        .centered(true)
-        .set_title(String::from("Title"))
-        .resizable(true)
-        .build()?;
-    let mut app = App::new(Box::new(Application{pos: Vec2d::new(0.0, 0.0)}), component);
+    let mut app = App::new(Box::new(Application
+        {
+            world: World::default(),
+            schedule: Schedule::default()
+        }));
 
     return Runner::run(&mut app);
 }

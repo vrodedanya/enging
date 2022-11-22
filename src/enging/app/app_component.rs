@@ -8,6 +8,8 @@ pub struct AppComponent {
     pub event_pump: sdl2::EventPump,
     pub dt: std::time::Duration,
 
+    pub is_running: bool
+
 }
 
 impl AppComponent {
