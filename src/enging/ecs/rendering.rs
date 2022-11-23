@@ -1,11 +1,12 @@
 use bevy_ecs::prelude::*;
-use crate::{Vec2d, enging::app::AppComponent};
+use sdl2::render::Canvas;
+use sdl2::video::Window;
+use crate::Vec2d;
 use sdl2::{pixels::Color, rect::Rect};
 
 #[derive(Component)]
 pub struct Position {
-    pub position: Vec2d,
-    pub angle: f32
+    pub position: Vec2d
 }
 
 pub struct DrawablePoint {
@@ -23,20 +24,20 @@ pub enum Renderable {
     Rect(DrawableRect),
 }
 
-pub fn render(mut component: NonSendMut<AppComponent>, query: Query<(&Position, &Renderable)>) {
-    component.canvas.set_draw_color(Color::BLACK);
-    component.canvas.clear();
+pub fn render(mut canvas: NonSendMut<Canvas<Window>>, query: Query<(&Position, &Renderable)>) {
+    canvas.set_draw_color(Color::BLACK);
+    canvas.clear();
     for (pos, renderable )in query.iter() {
         match renderable {
             Renderable::Point(point) => {
-                component.canvas.set_draw_color(point.color);
-                component.canvas.draw_point(pos.position).unwrap();
+                canvas.set_draw_color(point.color);
+                canvas.draw_point(pos.position).unwrap();
             },
             Renderable::Rect(rect) => {
-                component.canvas.set_draw_color(rect.color);
-                component.canvas.draw_rect(Rect::new(pos.position.x as i32, pos.position.y as i32, rect.size.0, rect.size.1)).unwrap();
+                canvas.set_draw_color(rect.color);
+                canvas.draw_rect(Rect::new(pos.position.x as i32, pos.position.y as i32, rect.size.0, rect.size.1)).unwrap();
             },
         }
     }
-    component.canvas.present();
+    canvas.present();
 }

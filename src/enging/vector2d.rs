@@ -55,6 +55,20 @@ impl Vec2d {
         self.y = center.1 + c.x * sin + c.y * cos;
         self.x = temp_x;
     }
+
+    pub fn get_nearest_point_on_circle(&self, center: Vec2d, radius: f32) -> Vec2d {
+        let x_sub = self.x - center.x;
+        let y_sub = self.y - center.y;
+        let expr = (x_sub.powi(2) + y_sub.powi(2)).sqrt();
+        Vec2d {
+            x: center.x + (radius * x_sub) / expr,
+            y: center.y + (radius * y_sub) / expr
+        }
+    }
+
+    pub fn is_in_cirlce(&mut self, center: Vec2d, radius: f32) -> bool {
+        (self.x - center.x).powi(2) + (self.y - center.y).powi(2) <= radius.powi(2)
+    }
     
     pub fn distance_to(&self, vec: &Vec2d) -> f32 {
         ((self.x - vec.x).powi(2) + (self.y - vec.y).powi(2)).sqrt()

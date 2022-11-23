@@ -1,24 +1,31 @@
 use bevy_ecs::prelude::*;
+use sdl2::EventPump;
 
-use crate::enging::{app::AppComponent, vector2d::Vec2d};
+use crate::enging::vector2d::Vec2d;
+use rand::{self, Rng};
 
-pub fn move_particles(component: NonSend<AppComponent>, mut query: Query<&mut super::rendering::Position>) {
-    let center = ((component.canvas.window().size().0 / 2) as f32, (component.canvas.window().size().1 / 2) as f32);
-    for mut pos in query.iter_mut() {
-        let self_angle = pos.angle;
-        pos.position.rotate_with_moved_center( self_angle * component.dt.as_secs_f32(), (component.event_pump.mouse_state().x() as f32, 
-        component.event_pump.mouse_state().y() as f32));
-        if component.event_pump.mouse_state().left() {
-            let mouse_point = Vec2d::new(component.event_pump.mouse_state().x() as f32, component.event_pump.mouse_state().y() as f32);
-            let distance = pos.position.distance_to(&mouse_point);
-            let prev = pos.position;
-            pos.position += (mouse_point - prev) / distance * 0.1;
+#[derive(Component)]
+pub struct HasTarget {
+    pub target: Vec2d
+}
+
+pub fn move_particles(mut particles: Query<(&mut super::rendering::Position, &mut HasTarget)>, time: Res<crate::enging::utils::time::Time>, event_pump: NonSend<EventPump>) {
+    for (mut position, mut target) in particles.iter_mut() {
+        let position = &mut position.position;
+        let distance = position.distance_to(&target.target);
+        let prev = position.clone();
+        *position += (target.target - prev) / distance * 50.0 * time.dt.as_secs_f32();
+        
+        let mouse = Vec2d::new(event_pump.mouse_state().x() as f32, event_pump.mouse_state().y() as f32);
+
+        if position.is_in_cirlce(mouse, 35.0) {
+            *position = position.get_nearest_point_on_circle(mouse, 35.0);
         }
-        if component.event_pump.mouse_state().right() {
-            let mouse_point = Vec2d::new(component.event_pump.mouse_state().x() as f32, component.event_pump.mouse_state().y() as f32);
-            let distance = pos.position.distance_to(&mouse_point);
-            let prev = pos.position;
-            pos.position -= (mouse_point - prev) / distance * 0.1;
+
+        if distance < 5.0 || event_pump.mouse_state().left() {
+            let mut rnd = rand::thread_rng();
+            target.target.x = rnd.gen_range(0.0..2048.0);
+            target.target.y = rnd.gen_range(0.0..1080.0);
         }
     }
 }

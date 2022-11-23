@@ -1,4 +1,6 @@
 use crate::enging::errors::*;
+use bevy_ecs::prelude::*;
+use crate::enging::utils::{time::Time, app_state::AppState};
 
 pub struct AppBuilder {
     title: String,
@@ -69,7 +71,7 @@ impl AppBuilder {
         return self;
     }
 
-    pub fn build(&mut self) -> Result<super::AppComponent, GameError> {
+    pub fn build(&mut self) -> Result<super::AppContext, GameError> {
         let sdl_context = sdl2::init().map_err(sdl_error_to_game_error)?;
         let video_subsystem = sdl_context.video().map_err(sdl_error_to_game_error)?;
         if self.width == 0 || self.height == 0 {
@@ -111,14 +113,17 @@ impl AppBuilder {
         };
 
         let event_pump = sdl_context.event_pump().map_err(sdl_error_to_game_error)?;
-        let component = super::AppComponent {
-            sdl_context,
-            video_subsystem,
-            canvas,
-            event_pump,
-            dt: std::time::Duration::new(0 ,0),
-            is_running: true
+        let mut component = super::AppContext {
+            world: World::new(),
+            schedule: Schedule::default()
         };
+        let window_size = canvas.window().size();
+        component.world.insert_non_send_resource(sdl_context);
+        component.world.insert_non_send_resource(video_subsystem);
+        component.world.insert_non_send_resource(canvas);
+        component.world.insert_non_send_resource(event_pump);
+        component.world.insert_resource(Time::default());
+        component.world.insert_resource(AppState::new(true, window_size));
         return Ok(component);
     }
 }

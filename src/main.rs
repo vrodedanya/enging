@@ -1,38 +1,28 @@
 mod enging;
 
-use enging::{errors::*, app::*, vector2d::Vec2d};
 use rand::Rng;
 use sdl2::{event::*, pixels::Color, rect::Rect, sys::Window};
 use bevy_ecs::prelude::*;
+use crate::enging::prelude::*;
 
 struct Application{
-    world: World,
-    schedule: Schedule
 }
 
 impl enging::app::State for Application{
-    fn update(&mut self) -> Result<bool, enging::errors::GameError> {
-        let start = std::time::Instant::now();
-        self.schedule.run(&mut self.world);
-        let mut component = self.world.get_non_send_resource_mut::<AppComponent>().unwrap();
-        component.dt = start.elapsed();
-        return Ok(component.is_running);
+    fn update(&mut self, context: &mut AppContext) -> Result<(), enging::errors::GameError> {
+        let time = context.world.get_resource::<crate::enging::utils::time::Time>().unwrap();
+        println!("FPS: {} Since begin: {}", time.fps, time.time_from_begin.as_secs());
+        return Ok(());
     }
 
-    fn init(&mut self) -> Result<(), GameError> {
-        self.world.insert_non_send_resource(AppComponent::new()?
-        .accelerated(true) 
-        .target_texture(true)
-        .centered(true)
-        .set_title(String::from("Title"))
-        .fullscreen(true)
-        .build()?);
-        use enging::ecs::rendering::*;
+    fn init(&mut self, context: &mut AppContext) -> Result<(), GameError> {
+
         let mut rnd = rand::thread_rng();
-        for _ in 0..4000 {
-            self.world.spawn((
-                Position{position: Vec2d { x: rnd.gen_range(-100.0..2148.0), y:  rnd.gen_range(-100.0..2148.0)}, angle: rnd.gen_range(0.1..1.8)},
-                Renderable::Point(DrawablePoint{color: Color::RGB(100 + rnd.gen_range(50..150), rnd.gen_range(0..30), rnd.gen_range(0..30))})
+        for _ in 0..40000 {
+            context.world.spawn((
+                rendering::Position{position: Vec2d { x: rnd.gen_range(-100.0..2148.0), y:  rnd.gen_range(-100.0..2148.0)}},
+                rendering::Renderable::Point(rendering::DrawablePoint{color: Color::RGB(100 + rnd.gen_range(50..150), rnd.gen_range(0..30), rnd.gen_range(0..30))}),
+                movable::HasTarget{target: Vec2d { x: rnd.gen_range(0.0..2048.0), y: rnd.gen_range(0.0..1080.0) }}
             ));
         }
 
@@ -43,9 +33,9 @@ impl enging::app::State for Application{
         #[derive(StageLabel)]
         pub struct Moving;
 
-        self.schedule.add_stage(EventHandling, SystemStage::single_threaded().with_system(enging::ecs::event_handling::handle_events));
-        self.schedule.add_stage(Moving, SystemStage::parallel().with_system(enging::ecs::movable::move_particles));
-        self.schedule.add_stage(Rendering, SystemStage::single_threaded().with_system(enging::ecs::rendering::render));
+        context.schedule.add_stage(EventHandling, SystemStage::single_threaded().with_system(enging::ecs::event_handling::handle_events));
+        context.schedule.add_stage(Moving, SystemStage::parallel().with_system(enging::ecs::movable::move_particles));
+        context.schedule.add_stage(Rendering, SystemStage::single_threaded().with_system(enging::ecs::rendering::render));
 
         return Ok(());
     }
@@ -53,10 +43,14 @@ impl enging::app::State for Application{
 
 fn main() -> Result<(), GameError> {
     let mut app = App::new(Box::new(Application
-        {
-            world: World::default(),
-            schedule: Schedule::default()
-        }));
+        {}),
+        AppContext::new()?
+        .accelerated(true) 
+        .target_texture(true)
+        .centered(true)
+        .set_title(String::from("Title"))
+        .fullscreen(true)
+        .build()?);
 
     return Runner::run(&mut app);
 }
