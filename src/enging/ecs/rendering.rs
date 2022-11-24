@@ -19,6 +19,7 @@ pub struct DrawableRect {
 }
 
 #[derive(Component)]
+#[allow(dead_code)]
 pub enum Renderable {
     Point(DrawablePoint),
     Rect(DrawableRect),

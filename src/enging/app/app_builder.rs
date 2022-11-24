@@ -1,6 +1,6 @@
 use crate::enging::errors::*;
 use bevy_ecs::prelude::*;
-use crate::enging::utils::{time::Time, app_state::AppState};
+use crate::enging::resources::{time::Time, app_state::AppState};
 
 pub struct AppBuilder {
     title: String,
@@ -16,6 +16,7 @@ pub struct AppBuilder {
     is_target_texture: bool,
 }
 
+#[allow(dead_code)]
 impl AppBuilder {
     pub fn empty() -> AppBuilder {
         AppBuilder {

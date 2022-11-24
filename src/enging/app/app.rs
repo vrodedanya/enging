@@ -26,11 +26,11 @@ impl App {
         let start = std::time::Instant::now();
         self.state.update(&mut self.context)?;
         self.context.schedule.run(&mut self.context.world);
-        let mut time = self.context.world.get_resource_mut::<crate::enging::utils::time::Time>().unwrap();
+        let mut time = self.context.world.get_resource_mut::<crate::enging::resources::time::Time>().unwrap();
         time.dt = start.elapsed();
         time.fps = 1.0 / time.dt.as_secs_f32();
         time.time_from_begin = self.begin_time.elapsed();
         
-        return Ok(self.context.world.get_resource::<crate::enging::utils::app_state::AppState>().unwrap().is_running.clone());
+        return Ok(self.context.world.get_resource::<crate::enging::resources::app_state::AppState>().unwrap().is_running.clone());
     }
 }

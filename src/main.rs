@@ -1,7 +1,7 @@
 mod enging;
 
 use rand::Rng;
-use sdl2::{event::*, pixels::Color, rect::Rect, sys::Window};
+use sdl2::pixels::Color;
 use bevy_ecs::prelude::*;
 use crate::enging::prelude::*;
 
@@ -9,8 +9,8 @@ struct Application{
 }
 
 impl enging::app::State for Application{
-    fn update(&mut self, context: &mut AppContext) -> Result<(), enging::errors::GameError> {
-        let time = context.world.get_resource::<crate::enging::utils::time::Time>().unwrap();
+    fn update(&mut self, context: &mut AppContext) -> Result<(), GameError> {
+        let time = context.world.get_resource::<crate::enging::resources::time::Time>().unwrap();
         println!("FPS: {} Since begin: {}", time.fps, time.time_from_begin.as_secs());
         return Ok(());
     }

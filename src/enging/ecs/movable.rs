@@ -9,7 +9,7 @@ pub struct HasTarget {
     pub target: Vec2d
 }
 
-pub fn move_particles(mut particles: Query<(&mut super::rendering::Position, &mut HasTarget)>, time: Res<crate::enging::utils::time::Time>, event_pump: NonSend<EventPump>) {
+pub fn move_particles(mut particles: Query<(&mut super::rendering::Position, &mut HasTarget)>, time: Res<crate::enging::resources::time::Time>, event_pump: NonSend<EventPump>) {
     for (mut position, mut target) in particles.iter_mut() {
         let position = &mut position.position;
         let distance = position.distance_to(&target.target);
